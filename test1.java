@@ -5,7 +5,7 @@ import java.io.*;
 import java.net.*;
 
 public class test1 extends JFrame {
-    private static final String SERVER_ADDRESS = "10.5.219.216";
+    private static final String SERVER_ADDRESS = "10.5.252.134";
     private static final int SERVER_PORT = 3000;
 
     private PrintWriter writer;

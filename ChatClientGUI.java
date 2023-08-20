@@ -3,15 +3,17 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 public class ChatClientGUI extends JFrame {
-    private static final String SERVER_ADDRESS = "10.5.219.216";
+    private static final String SERVER_ADDRESS = ipaddress();
     private static final int SERVER_PORT = 3000;
 
     private PrintWriter writer;
 
     private JTextField inputField;
     private JTextArea chatArea;
+    private JButton sendButton; // New button for sending messages
 
     public ChatClientGUI() {
         initUI();
@@ -28,17 +30,27 @@ public class ChatClientGUI extends JFrame {
         chatArea.setEditable(false);
 
         JScrollPane chatScrollPane = new JScrollPane(chatArea);
-        chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Ensure vertical scrollbar is always visible
+        chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
+        sendButton = new JButton("Send"); // Initialize the send button
+        sendButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                sendMessage();
+            }
+        });
         inputField.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 sendMessage();
             }
         });
 
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.add(inputField, BorderLayout.CENTER);
+        bottomPanel.add(sendButton, BorderLayout.EAST);
+
         setLayout(new BorderLayout());
         add(chatScrollPane, BorderLayout.CENTER);
-        add(inputField, BorderLayout.SOUTH);
+        add(bottomPanel, BorderLayout.SOUTH);
 
         setVisible(true);
     }
@@ -51,6 +63,8 @@ public class ChatClientGUI extends JFrame {
 
             String name = JOptionPane.showInputDialog("Enter your name:");
             writer.println(name);
+            String password = JOptionPane.showInputDialog("Enter your password:");
+            writer.println(password);
 
             Thread outputThread = new Thread(() -> {
                 try {
@@ -75,6 +89,23 @@ public class ChatClientGUI extends JFrame {
             writer.println(message);
             inputField.setText("");
         }
+    }
+
+    private static String ipaddress() {
+        String ipadd = "";
+        try {
+            Enumeration<NetworkInterface> networkInterfaceEnumeration = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaceEnumeration.hasMoreElements()) {
+                for (InterfaceAddress interfaceAddress : networkInterfaceEnumeration.nextElement()
+                        .getInterfaceAddresses())
+                    if (interfaceAddress.getAddress().isSiteLocalAddress())
+                        ipadd = interfaceAddress.getAddress().getHostAddress();
+            }
+            return ipadd;
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return ipadd;
     }
 
     public static void main(String[] args) {
