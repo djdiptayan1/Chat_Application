@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -30,7 +32,8 @@ public class ChatClientGUI extends JFrame {
         chatArea.setEditable(false);
 
         JScrollPane chatScrollPane = new JScrollPane(chatArea);
-        chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        DefaultCaret caret = (DefaultCaret) chatArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
         sendButton = new JButton("Send"); // Initialize the send button
         sendButton.addActionListener(new ActionListener() {
