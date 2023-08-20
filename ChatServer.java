@@ -1,15 +1,17 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ChatServer {
     private static final int PORT = 3000;
     private static Map<PrintWriter, String> clientMap = new HashMap<>();
-    private static Map<String, String> userCredentials = new HashMap<>(); // Map of usernames and passwords
+    private static Map<String, String> userCredentials = new HashMap<>();
+    private static List<String> chatHistory = new ArrayList<>(); // List to store chat history
 
     public static void main(String[] args) {
-        // Initialize user credentials (replace with actual data)
         userCredentials.put("Diptayan", "Torbaperbichi");
         userCredentials.put("Palash", "hola");
         userCredentials.put("Srijit", "Einemukhe");
@@ -54,10 +56,16 @@ public class ChatServer {
                         clientMap.put(writer, username);
                     }
 
+                    // Send chat history to the client
+                    for (String historyMessage : chatHistory) {
+                        writer.println(historyMessage);
+                    }
+
                     String message;
                     while ((message = reader.readLine()) != null) {
                         String formattedMessage = username + ": " + message;
                         System.out.println("Received: " + formattedMessage);
+                        chatHistory.add(formattedMessage); // Store the message in chat history
                         broadcast(formattedMessage);
                     }
                 } else {
