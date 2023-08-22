@@ -8,7 +8,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import raven.chat.component.ChatBox;
 import raven.chat.model.ModelMessage;
-import chat_application_master.ChatClientGUI;
+//import chat_application_master.ChatClientGUI;
 import raven.chat.swing.ChatEvent;
 
 /**
