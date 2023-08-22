@@ -1,6 +1,5 @@
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -9,15 +8,19 @@ import java.util.*;
 
 public class ChatClientGUI extends JFrame {
     private static final String SERVER_ADDRESS = ipaddress();
+    // private static final String SERVER_ADDRESS = "10.5.162.37";
     private static final int SERVER_PORT = 3000;
 
+    private Socket socket; // Add a Socket field
     private PrintWriter writer;
 
     private JTextField inputField;
     private JTextArea chatArea;
     private JButton sendButton; // New button for sending messages
+    private JButton sendFileButton; // Button for sending files
 
-    public ChatClientGUI() {
+    public ChatClientGUI(Socket socket) {
+        this.socket = socket;
         initUI();
         connectToServer();
     }
@@ -47,9 +50,17 @@ public class ChatClientGUI extends JFrame {
             }
         });
 
+        sendFileButton = new JButton("Send File");
+        sendFileButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                sendFile();
+            }
+        });
+
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(inputField, BorderLayout.CENTER);
         bottomPanel.add(sendButton, BorderLayout.EAST);
+        bottomPanel.add(sendFileButton, BorderLayout.WEST); // Add the Send File button
 
         setLayout(new BorderLayout());
         add(chatScrollPane, BorderLayout.CENTER);
@@ -73,7 +84,14 @@ public class ChatClientGUI extends JFrame {
                 try {
                     String message;
                     while ((message = reader.readLine()) != null) {
-                        chatArea.append(message + "\n");
+                        if (message.equals("AUTHENTICATED")) {
+                            JOptionPane.showMessageDialog(this, "Authenticated successfully!");
+                        } else if (message.equals("AUTH_FAILED")) {
+                            JOptionPane.showMessageDialog(this, "Authentication failed. Exiting...");
+                            System.exit(0);
+                        } else {
+                            chatArea.append(message + "\n");
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -91,6 +109,36 @@ public class ChatClientGUI extends JFrame {
         if (!message.isEmpty()) {
             writer.println(message);
             inputField.setText("");
+        }
+    }
+
+    private void sendFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        int choice = fileChooser.showOpenDialog(this);
+
+        if (choice == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            System.out.println("Sending file: " + selectedFile);
+
+            try {
+                OutputStream outputStream = socket.getOutputStream();
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+
+                FileInputStream fileInputStream = new FileInputStream(selectedFile);
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+
+                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                    objectOutputStream.write(buffer, 0, bytesRead);
+                }
+
+                objectOutputStream.flush();
+                objectOutputStream.close();
+                fileInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -112,6 +160,11 @@ public class ChatClientGUI extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new ChatClientGUI());
+        try {
+            Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+            SwingUtilities.invokeLater(() -> new ChatClientGUI(socket));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
