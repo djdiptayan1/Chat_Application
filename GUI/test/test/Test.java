@@ -2,13 +2,24 @@ package test;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.Socket;
+import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Enumeration;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
+
 import raven.chat.component.ChatBox;
 import raven.chat.model.ModelMessage;
-//import chat_application_master.ChatClientGUI;
 import raven.chat.swing.ChatEvent;
 
 /**
@@ -20,20 +31,31 @@ public class Test extends javax.swing.JFrame {
     /**
      * Creates new form Test
      */
+    private String name;
+    private static final String SERVER_ADDRESS = ipaddress();
+private static final int SERVER_PORT = 3000;
+private boolean isSelfMessage=false;
+
+private PrintWriter writer;
+
     public Test() {
         initComponents();
         chatArea.setTitle("Java Swing Chat");
         SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy, hh:mmaa");
+        connectToServer();
+        
         chatArea.addChatEvent(new ChatEvent() {
             @Override
             public void mousePressedSendButton(ActionEvent evt) {
+                
                 Icon icon = new ImageIcon(getClass().getResource("/test/p1.png"));
-                String name = "Srijit";         //name of user
-
+                         
                 String date = df.format(new Date());
                 String message = chatArea.getText().trim();
+                isSelfMessage=true;
                 chatArea.addChatBox(new ModelMessage(icon, name, date, message), ChatBox.BoxType.RIGHT);
                 chatArea.clearTextAndGrabFocus();
+                sendMessageToServer(message);
             }
 
             @Override
@@ -47,7 +69,72 @@ public class Test extends javax.swing.JFrame {
             }
         });
     }
+    private void sendMessageToServer(String message) {
+        if (!message.isEmpty() && writer != null) {
+            writer.println(message);
+        }
+    }
+    private void connectToServer() {
+    try {
+        Icon icon = new ImageIcon(getClass().getResource("/test/p1.png"));
+         SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy, hh:mmaa");
+        Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        writer = new PrintWriter(socket.getOutputStream(), true);
+         String date = df.format(new Date());
+        name = JOptionPane.showInputDialog("Enter your name:");
+        writer.println(name);
+        String password = JOptionPane.showInputDialog("Enter your password:");
+        writer.println(password);
 
+        Thread outputThread = new Thread(() -> {
+            try {
+                String message;
+                while ((message = reader.readLine()) != null) {
+                    if (message.equals("AUTHENTICATED")) {
+                        JOptionPane.showMessageDialog(this, "Authenticated successfully!");
+                    } else if (message.equals("AUTH_FAILED")) {
+                        JOptionPane.showMessageDialog(this, "Authentication failed. Exiting...");
+                        System.exit(0);
+                    } else {
+                        if(!isSelfMessage){
+                            String[] parts = message.split(": ", 2);
+                            if (parts.length == 2) {
+                                String senderName = parts[0];
+                                String actualMessage = parts[1];
+                                chatArea.addChatBox(new ModelMessage(icon, senderName, date, actualMessage), ChatBox.BoxType.LEFT);
+                            }
+                         }
+                        isSelfMessage=false;
+                }
+            }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        outputThread.start();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+private static String ipaddress() {
+        String ipadd = "";
+        try {
+            Enumeration<NetworkInterface> networkInterfaceEnumeration = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaceEnumeration.hasMoreElements()) {
+                for (InterfaceAddress interfaceAddress : networkInterfaceEnumeration.nextElement()
+                        .getInterfaceAddresses())
+                    if (interfaceAddress.getAddress().isSiteLocalAddress())
+                        ipadd = interfaceAddress.getAddress().getHostAddress();
+            }
+            return ipadd;
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return ipadd;
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
