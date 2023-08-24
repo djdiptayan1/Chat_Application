@@ -102,7 +102,10 @@ private PrintWriter writer;
                             if (parts.length == 2) {
                                 String senderName = parts[0];
                                 String actualMessage = parts[1];
-                                chatArea.addChatBox(new ModelMessage(icon, senderName, date, actualMessage), ChatBox.BoxType.LEFT);
+                                ChatBox.BoxType boxType = senderName.equals(name) ? ChatBox.BoxType.RIGHT : ChatBox.BoxType.LEFT;
+
+                                chatArea.addChatBox(new ModelMessage(icon, senderName, date, actualMessage), boxType);
+
                             }
                          }
                         isSelfMessage=false;
