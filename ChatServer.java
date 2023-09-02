@@ -12,9 +12,9 @@ public class ChatServer {
     private static List<String> chatHistory = new ArrayList<>(); // List to store chat history
 
     public static void main(String[] args) {
-        userCredentials.put("Diptayan", "Torbaperbichi");
-        userCredentials.put("Palash", "hola");
-        userCredentials.put("Srijit", "Einemukhe");
+        userCredentials.put("Diptayan", "12");
+        userCredentials.put("Palash", "12");
+        userCredentials.put("Srijit", "12");
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Chat server is running...");

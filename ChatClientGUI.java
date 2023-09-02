@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+
 public class ChatClientGUI extends JFrame {
     private static final String SERVER_ADDRESS = ipaddress();
     // private static final String SERVER_ADDRESS = "10.5.162.37";
