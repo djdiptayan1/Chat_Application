@@ -1,26 +1,21 @@
 import javax.swing.*;
-import javax.swing.text.DefaultCaret;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.Base64;
 
-public class ChatClientGUI extends JFrame {
-    private static final String SERVER_ADDRESS = ipaddress();
-    //private static final String SERVER_ADDRESS = "10.3.41.230";
+public class test extends JFrame {
+    private static final String SERVER_ADDRESS = "10.3.131.199";
     private static final int SERVER_PORT = 3000;
 
-    private Socket socket; // Add a Socket field
     private PrintWriter writer;
 
     private JTextField inputField;
     private JTextArea chatArea;
     private JButton sendButton; // New button for sending messages
-    private JButton sendFileButton; // Button for sending files
 
-    public ChatClientGUI(Socket socket) {
-        this.socket = socket;
+    public test() {
         initUI();
         connectToServer();
     }
@@ -35,8 +30,7 @@ public class ChatClientGUI extends JFrame {
         chatArea.setEditable(false);
 
         JScrollPane chatScrollPane = new JScrollPane(chatArea);
-        DefaultCaret caret = (DefaultCaret) chatArea.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         sendButton = new JButton("Send"); // Initialize the send button
         sendButton.addActionListener(new ActionListener() {
@@ -50,17 +44,9 @@ public class ChatClientGUI extends JFrame {
             }
         });
 
-        sendFileButton = new JButton("Send File");
-        sendFileButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                sendFile();
-            }
-        });
-
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(inputField, BorderLayout.CENTER);
         bottomPanel.add(sendButton, BorderLayout.EAST);
-        bottomPanel.add(sendFileButton, BorderLayout.WEST); // Add the Send File button
 
         setLayout(new BorderLayout());
         add(chatScrollPane, BorderLayout.CENTER);
@@ -74,6 +60,7 @@ public class ChatClientGUI extends JFrame {
 
         while (loginAttempts < 3) {
             try {
+                Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 writer = new PrintWriter(socket.getOutputStream(), true);
 
@@ -90,6 +77,8 @@ public class ChatClientGUI extends JFrame {
                     loginAttempts++;
                     JOptionPane.showMessageDialog(this, "Authentication failed. Please try again.");
                 }
+
+                socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -102,12 +91,16 @@ public class ChatClientGUI extends JFrame {
 
         Thread outputThread = new Thread(() -> {
             try {
+                Socket socket;
+                socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                 String message;
                 while ((message = reader.readLine()) != null) {
                     chatArea.append(message + "\n");
                 }
+
+                socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -119,64 +112,35 @@ public class ChatClientGUI extends JFrame {
     private void sendMessage() {
         String message = inputField.getText();
         if (!message.isEmpty()) {
-            writer.println(message);
+            if (message.startsWith("/sendfile")) {
+                String filePath = message.substring(10); // Remove the '/sendfile ' prefix
+                sendFile(filePath);
+            } else {
+                writer.println(message);
+            }
             inputField.setText("");
         }
     }
-
-    private void sendFile() {
-        JFileChooser fileChooser = new JFileChooser();
-        int choice = fileChooser.showOpenDialog(this);
-
-        if (choice == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            System.out.println("Sending file: " + selectedFile);
-
-            try {
-                OutputStream outputStream = socket.getOutputStream();
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
-
-                FileInputStream fileInputStream = new FileInputStream(selectedFile);
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-
-                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                    objectOutputStream.write(buffer, 0, bytesRead);
-                }
-
-                objectOutputStream.flush();
-                objectOutputStream.close();
+    
+    private void sendFile(String filePath) {
+        try {
+            File file = new File(filePath);
+            if (file.exists()) {
+                FileInputStream fileInputStream = new FileInputStream(file);
+                byte[] fileData = fileInputStream.readAllBytes();
                 fileInputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+    
+                String base64FileData = Base64.getEncoder().encodeToString(fileData);
+                writer.println("/file " + file.getName()); // Send a file marker
+                writer.println(base64FileData);
             }
-        }
-    }
-
-    private static String ipaddress() {
-        String ipadd = "";
-        try {
-            Enumeration<NetworkInterface> networkInterfaceEnumeration = NetworkInterface.getNetworkInterfaces();
-            while (networkInterfaceEnumeration.hasMoreElements()) {
-                for (InterfaceAddress interfaceAddress : networkInterfaceEnumeration.nextElement()
-                        .getInterfaceAddresses())
-                    if (interfaceAddress.getAddress().isSiteLocalAddress())
-                        ipadd = interfaceAddress.getAddress().getHostAddress();
-            }
-            return ipadd;
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
-        return ipadd;
-    }
-
-    public static void main(String[] args) {
-        try {
-            Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-            SwingUtilities.invokeLater(() -> new ChatClientGUI(socket));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new test());
     }
 }

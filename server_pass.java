@@ -1,20 +1,21 @@
 import java.io.*;
 import java.net.*;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ChatServer {
+public class server_pass {
     private static final int PORT = 3000;
     private static Map<PrintWriter, String> clientMap = new HashMap<>();
     private static Map<String, String> userCredentials = new HashMap<>();
-    private static List<String> chatHistory = new ArrayList<>();
+    private static List<String> chatHistory = new ArrayList<>(); // List to store chat history
 
     public static void main(String[] args) {
-        userCredentials.put("Diptayan", "12");
-        userCredentials.put("Palash", "12");
-        userCredentials.put("Srijit", "12");
+        userCredentials.put("Diptayan", "Torbaperbichi");
+        userCredentials.put("Palash", "hola");
+        userCredentials.put("Srijit", "Einemukhe");
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Chat server is running...");
@@ -63,19 +64,14 @@ public class ChatServer {
 
                     String message;
                     while ((message = reader.readLine()) != null) {
-                        if (message.startsWith("SEND_FILE:")) {
-                            String[] parts = message.split(":", 3);
-                            if (parts.length == 3) {
-                                String sender = username;
-                                String recipient = parts[1];
-                                String fileName = parts[2];
-
-                                broadcastFileTransfer(sender, recipient, fileName);
-                            }
+                        if (message.equals("SEND_FILE")) {
+                            String fileName = reader.readLine();
+                            String receiver = reader.readLine();
+                            sendFile(fileName, receiver);
                         } else {
                             String formattedMessage = username + ": " + message;
                             System.out.println("Received: " + formattedMessage);
-                            chatHistory.add(formattedMessage);
+                            chatHistory.add(formattedMessage); // Store the message in chat history
                             broadcast(formattedMessage);
                         }
                     }
@@ -83,24 +79,6 @@ public class ChatServer {
                     writer.println("AUTH_FAILED");
                     socket.close();
                 }
-                InputStream inputStream = socket.getInputStream();
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-
-                FileOutputStream fileOutputStream = new FileOutputStream("received_file.txt"); // Modify the filename as
-                                                                                               // needed
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-
-                while ((bytesRead = objectInputStream.read(buffer)) != -1) {
-                    bufferedOutputStream.write(buffer, 0, bytesRead);
-                }
-
-                bufferedOutputStream.flush();
-                bufferedOutputStream.close();
-
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -112,7 +90,6 @@ public class ChatServer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
         }
 
@@ -124,18 +101,39 @@ public class ChatServer {
             }
         }
 
-        private void broadcastFileTransfer(String sender, String recipient, String fileName) {
+        private boolean authenticateUser(String username, String password) {
+            return userCredentials.containsKey(username) && userCredentials.get(username).equals(password);
+        }
+
+        private void sendFile(String fileName, String receiver) {
             synchronized (clientMap) {
                 for (PrintWriter writer : clientMap.keySet()) {
-                    if (clientMap.get(writer).equals(recipient)) {
-                        writer.println("RECEIVE_FILE:" + sender + ":" + fileName);
+                    if (clientMap.get(writer).equals(receiver)) {
+                        try {
+                            writer.println("RECEIVING_FILE");
+                            FileInputStream fileInputStream = new FileInputStream(fileName);
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+
+                            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                                writer.println("FILE_CONTENT");
+                                writer.flush();
+                                writer.println(Base64.getEncoder().encodeToString(buffer));
+                                writer.flush();
+                            }
+
+                            writer.println("FILE_END");
+                            writer.flush();
+
+                            fileInputStream.close();
+                            System.out.println("File " + fileName + " sent to " + receiver);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        break;
                     }
                 }
             }
-        }
-
-        private boolean authenticateUser(String username, String password) {
-            return userCredentials.containsKey(username) && userCredentials.get(username).equals(password);
         }
     }
 }

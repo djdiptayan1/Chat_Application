@@ -1,17 +1,14 @@
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class ChatServer {
+public class testserver {
     private static final int PORT = 3000;
     private static Map<PrintWriter, String> clientMap = new HashMap<>();
     private static Map<String, String> userCredentials = new HashMap<>();
-    private static List<String> chatHistory = new ArrayList<>();
 
     public static void main(String[] args) {
+        // Initialize user credentials (replace with actual data)
         userCredentials.put("Diptayan", "12");
         userCredentials.put("Palash", "12");
         userCredentials.put("Srijit", "12");
@@ -56,26 +53,13 @@ public class ChatServer {
                         clientMap.put(writer, username);
                     }
 
-                    // Send chat history to the client
-                    for (String historyMessage : chatHistory) {
-                        writer.println(historyMessage);
-                    }
-
                     String message;
                     while ((message = reader.readLine()) != null) {
-                        if (message.startsWith("SEND_FILE:")) {
-                            String[] parts = message.split(":", 3);
-                            if (parts.length == 3) {
-                                String sender = username;
-                                String recipient = parts[1];
-                                String fileName = parts[2];
-
-                                broadcastFileTransfer(sender, recipient, fileName);
-                            }
+                        if (message.equals("FILE")) {
+                            handleFileTransfer(reader);
                         } else {
                             String formattedMessage = username + ": " + message;
                             System.out.println("Received: " + formattedMessage);
-                            chatHistory.add(formattedMessage);
                             broadcast(formattedMessage);
                         }
                     }
@@ -83,24 +67,6 @@ public class ChatServer {
                     writer.println("AUTH_FAILED");
                     socket.close();
                 }
-                InputStream inputStream = socket.getInputStream();
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-
-                FileOutputStream fileOutputStream = new FileOutputStream("received_file.txt"); // Modify the filename as
-                                                                                               // needed
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-
-                while ((bytesRead = objectInputStream.read(buffer)) != -1) {
-                    bufferedOutputStream.write(buffer, 0, bytesRead);
-                }
-
-                bufferedOutputStream.flush();
-                bufferedOutputStream.close();
-
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -112,7 +78,32 @@ public class ChatServer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
 
+        private void handleFileTransfer(BufferedReader reader) {
+            try {
+                String fileName = reader.readLine();
+                String sender = clientMap.get(writer);
+                String message = sender + " sent a file: " + fileName;
+
+                broadcast(message);
+
+                String filePath = "/Users/djdiptayan/Downloads" + fileName; // Specify the path where you want to save
+                                                                            // the file
+                FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+
+                InputStream inputStream = socket.getInputStream(); // Get the socket's input stream for reading bytes
+
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    fileOutputStream.write(buffer, 0, bytesRead);
+                }
+
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
 
@@ -120,16 +111,6 @@ public class ChatServer {
             synchronized (clientMap) {
                 for (PrintWriter writer : clientMap.keySet()) {
                     writer.println(message);
-                }
-            }
-        }
-
-        private void broadcastFileTransfer(String sender, String recipient, String fileName) {
-            synchronized (clientMap) {
-                for (PrintWriter writer : clientMap.keySet()) {
-                    if (clientMap.get(writer).equals(recipient)) {
-                        writer.println("RECEIVE_FILE:" + sender + ":" + fileName);
-                    }
                 }
             }
         }

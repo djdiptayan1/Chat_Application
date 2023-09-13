@@ -4,11 +4,14 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class ChatClientGUI extends JFrame {
+import com.vdurmont.emoji.EmojiParser;
+
+public class gui2 extends JFrame {
     private static final String SERVER_ADDRESS = ipaddress();
-    //private static final String SERVER_ADDRESS = "10.3.41.230";
+    // private static final String SERVER_ADDRESS = "10.5.162.37";
     private static final int SERVER_PORT = 3000;
 
     private Socket socket; // Add a Socket field
@@ -19,7 +22,7 @@ public class ChatClientGUI extends JFrame {
     private JButton sendButton; // New button for sending messages
     private JButton sendFileButton; // Button for sending files
 
-    public ChatClientGUI(Socket socket) {
+    public gui2(Socket socket) {
         this.socket = socket;
         initUI();
         connectToServer();
@@ -70,50 +73,39 @@ public class ChatClientGUI extends JFrame {
     }
 
     private void connectToServer() {
-        int loginAttempts = 0;
+        try {
+            socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
 
-        while (loginAttempts < 3) {
-            try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                writer = new PrintWriter(socket.getOutputStream(), true);
+            String name = JOptionPane.showInputDialog("Enter your name:");
+            writer.println(name);
+            String password = JOptionPane.showInputDialog("Enter your password:");
+            writer.println(password);
 
-                String name = JOptionPane.showInputDialog("Enter your name:");
-                writer.println(name);
-                String password = JOptionPane.showInputDialog("Enter your password:");
-                writer.println(password);
-
-                String response = reader.readLine();
-                if (response.equals("AUTHENTICATED")) {
-                    JOptionPane.showMessageDialog(this, "Authenticated successfully!");
-                    break;
-                } else if (response.equals("AUTH_FAILED")) {
-                    loginAttempts++;
-                    JOptionPane.showMessageDialog(this, "Authentication failed. Please try again.");
+            Thread outputThread = new Thread(() -> {
+                try {
+                    String message;
+                    while ((message = reader.readLine()) != null) {
+                        if (message.equals("AUTHENTICATED")) {
+                            JOptionPane.showMessageDialog(this, "Authenticated successfully!");
+                        } else if (message.equals("AUTH_FAILED")) {
+                            JOptionPane.showMessageDialog(this, "Authentication failed. Exiting...");
+                            System.exit(0);
+                        } else {
+                            chatArea.append(message + "\n");
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            });
+
+            outputThread.start();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-        if (loginAttempts >= 3) {
-            JOptionPane.showMessageDialog(this, "Authentication failed 3 times. Exiting...");
-            System.exit(0);
-        }
-
-        Thread outputThread = new Thread(() -> {
-            try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-                String message;
-                while ((message = reader.readLine()) != null) {
-                    chatArea.append(message + "\n");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        outputThread.start();
     }
 
     private void sendMessage() {
@@ -174,7 +166,7 @@ public class ChatClientGUI extends JFrame {
     public static void main(String[] args) {
         try {
             Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-            SwingUtilities.invokeLater(() -> new ChatClientGUI(socket));
+            SwingUtilities.invokeLater(() -> new gui2(socket));
         } catch (IOException e) {
             e.printStackTrace();
         }
