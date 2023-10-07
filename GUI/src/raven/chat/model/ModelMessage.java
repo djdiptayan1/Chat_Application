@@ -1,8 +1,5 @@
 package raven.chat.model;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
-
 import javax.swing.Icon;
 
 public class ModelMessage {

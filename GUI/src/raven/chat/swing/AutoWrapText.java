@@ -1,8 +1,5 @@
 package raven.chat.swing;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
-
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BoxView;
 import javax.swing.text.ComponentView;

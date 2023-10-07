@@ -1,8 +1,5 @@
 package raven.chat.swing;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 

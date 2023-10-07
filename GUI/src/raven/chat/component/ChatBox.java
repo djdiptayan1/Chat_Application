@@ -1,8 +1,5 @@
 package raven.chat.component;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
-
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics;

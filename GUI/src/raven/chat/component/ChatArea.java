@@ -1,10 +1,12 @@
 package raven.chat.component;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
+
+import javax.swing.ImageIcon;
+import java.awt.Graphics;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
@@ -105,12 +107,36 @@ public class ChatArea extends JPanel {
         return panel;
     }
 
+//    private JPanel createBody() {
+//        RoundPanel panel = new RoundPanel();
+//        panel.setBackground(new Color(58, 72, 85));
+//        panel.setLayout(new MigLayout("wrap,fillx"));
+//        return panel;
+//    }
+    
+     private Image backgroundImage;
+    
     private JPanel createBody() {
-        RoundPanel panel = new RoundPanel();
-        panel.setBackground(new Color(58, 72, 85));
-        panel.setLayout(new MigLayout("wrap,fillx"));
-        return panel;
-    }
+    // Load the background image
+    backgroundImage = new ImageIcon("/Users/djdiptayan/Documents/Developer/java programs/apps/chat/GUI/whatsapp_background copy.jpg").getImage();
+    
+    // Create a custom JPanel to display the background image
+    JPanel panel = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            // Draw the background image
+             if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, this);
+        }
+        }
+    };
+    
+    panel.setLayout(new MigLayout("wrap,fillx"));
+    
+    return panel;
+}
+
 
     private JPanel createBottom() {
         RoundPanel panel = new RoundPanel();

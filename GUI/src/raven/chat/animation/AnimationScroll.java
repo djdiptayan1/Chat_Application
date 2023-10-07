@@ -1,8 +1,5 @@
 package raven.chat.animation;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
-
 import java.awt.Component;
 import javax.swing.JScrollPane;
 import org.jdesktop.animation.timing.Animator;

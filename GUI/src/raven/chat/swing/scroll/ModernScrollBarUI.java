@@ -1,8 +1,5 @@
 package raven.chat.swing.scroll;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
-
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
