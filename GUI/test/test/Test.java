@@ -3,6 +3,8 @@ package test;
 import com.vdurmont.emoji.EmojiParser;
 import java.awt.Font;
 
+import javax.swing.JFileChooser;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
@@ -68,7 +70,16 @@ public class Test extends javax.swing.JFrame {
 
             @Override
             public void mousePressedFileButton(ActionEvent evt) {
+                JFileChooser fileChooser = new JFileChooser();
 
+                // Show the dialog and check if a file was chosen
+                int result = fileChooser.showOpenDialog(Test.this);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    // User selected a file, you can access it using fileChooser.getSelectedFile()
+                    // Perform actions with the selected file here
+                    // For example, you can get the selected file using fileChooser.getSelectedFile()
+                    // and do something with it.
+                }
             }
 
             @Override
