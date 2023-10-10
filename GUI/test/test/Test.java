@@ -1,8 +1,5 @@
 package test;
 
-import com.vdurmont.emoji.EmojiParser;
-import java.awt.Font;
-
 import javax.swing.JFileChooser;
 
 import java.awt.event.ActionEvent;
@@ -50,10 +47,6 @@ public class Test extends javax.swing.JFrame {
         SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy, hh:mmaa");
         connectToServer();
 
-        // Set the font for the chatArea component
-        Font emojiFont = new Font("Segoe UI Emoji", Font.PLAIN, 14); // Use a suitable emoji-supporting font
-        chatArea.setFont(emojiFont);
-
         chatArea.addChatEvent(new ChatEvent() {
             @Override
             public void mousePressedSendButton(ActionEvent evt) {
@@ -91,16 +84,15 @@ public class Test extends javax.swing.JFrame {
 
     private void sendMessageToServer(String message) {
         if (!message.isEmpty() && writer != null) {
-            String messageWithEmojis = EmojiParser.parseToUnicode(message); // Parse emojis in the message
-            writer.println(messageWithEmojis);
+            writer.println(message);
         }
     }
-
+        private Socket socket; // Declare the socket variable
     private void connectToServer() {
         try {
             Icon icon = new ImageIcon(getClass().getResource("/test/p1.png"));
             SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy, hh:mmaa");
-            Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+            socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new PrintWriter(socket.getOutputStream(), true);
             String date = df.format(new Date());
@@ -123,14 +115,12 @@ public class Test extends javax.swing.JFrame {
                                 String[] parts = message.split(": ", 2);
                                 if (parts.length == 2) {
                                     String senderName = parts[0];
-                                    // Inside the outputThread
-// Inside the outputThread
-                                    String actualMessage = EmojiParser.parseToUnicode(parts[1]);
+                                    String actualMessage = parts[1];
+                                    ChatBox.BoxType boxType = senderName.equals(name) ? ChatBox.BoxType.RIGHT
+                                            : ChatBox.BoxType.LEFT;
 
-                                    ChatBox.BoxType boxType = senderName.equals(name) ? ChatBox.BoxType.RIGHT : ChatBox.BoxType.LEFT;
-
-// Make sure that chatArea is referencing your chat area component
-                                    chatArea.addChatBox(new ModelMessage(icon, senderName, date, actualMessage), boxType);
+                                    chatArea.addChatBox(new ModelMessage(icon, senderName, date, actualMessage),
+                                            boxType);
 
                                 }
                             }
