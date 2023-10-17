@@ -118,7 +118,7 @@ public class ChatArea extends JPanel {
     
     private JPanel createBody() {
     // Load the background image
-    backgroundImage = new ImageIcon("/Users/djdiptayan/Documents/Developer/java programs/apps/chat/GUI/whatsapp_background copy.jpg").getImage();
+    backgroundImage = new ImageIcon("./whatsapp_background copy.jpg").getImage();
     
     // Create a custom JPanel to display the background image
     JPanel panel = new JPanel() {

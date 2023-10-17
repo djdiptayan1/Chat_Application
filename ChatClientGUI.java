@@ -6,7 +6,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-
 public class ChatClientGUI extends JFrame {
     private static final String SERVER_ADDRESS = ipaddress();
     // private static final String SERVER_ADDRESS = "10.5.162.37";
@@ -160,12 +159,57 @@ public class ChatClientGUI extends JFrame {
         return ipadd;
     }
 
+    private static int showStartDialog() {
+        Object[] options = { "Existing User", "New User" };
+        int choice = JOptionPane.showOptionDialog(
+                null,
+                "Are you an existing user or a new user?",
+                "User Type",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+        return choice;
+    }
+
     public static void main(String[] args) {
-        try {
-            Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-            SwingUtilities.invokeLater(() -> new ChatClientGUI(socket));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        SwingUtilities.invokeLater(() -> {
+            int choice = showStartDialog();
+            if (choice == 0) {
+                // Existing User - Connect to the server
+                String username = JOptionPane.showInputDialog("Enter your username:");
+                String password = JOptionPane.showInputDialog("Enter your password:");
+
+                try {
+                    Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+                    ChatClientGUI chatClientGUI = new ChatClientGUI(socket);
+                    chatClientGUI.authenticate(username, password);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (choice == 1) {
+                // New User - Register and then connect to the server
+                String username = JOptionPane.showInputDialog("Enter your username:");
+                String password = JOptionPane.showInputDialog("Create a password:");
+
+                // You can add your registration logic here, e.g., sending username and password
+                // to the server.
+
+                try {
+                    Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+                    ChatClientGUI chatClientGUI = new ChatClientGUI(socket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    private void authenticate(String username, String password) {
+        // Send the username and password to the server and handle authentication logic.
+        writer.println(username);
+        writer.println(password);
+        // Rest of the authentication logic remains the same.
     }
 }

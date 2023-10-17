@@ -1,19 +1,20 @@
 import java.io.*;
 import java.net.*;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 
 public class ChatServer2 {
     private static final int PORT = 3000;
     private static Map<PrintWriter, String> clientMap = new HashMap<>();
-    private static List<String> chatHistory = new ArrayList<>(); // List to store chat history
-    private static Connection dbConnection; // Database connection
+    private static List<String> chatHistory = new ArrayList<>();
+    private static Connection dbConnection;
 
     public static void main(String[] args) {
-        // Establish a database connection
         establishDBConnection();
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -29,14 +30,12 @@ public class ChatServer2 {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            // Close the database connection when the server is shut down
             closeDBConnection();
         }
     }
 
     private static void establishDBConnection() {
         try {
-            // Replace the database URL, username, and password with your own
             String dbUrl = "jdbc:mysql://localhost:3306/chat_database";
             String dbUser = "root";
             String dbPassword = "Djsd@2611";
@@ -83,17 +82,28 @@ public class ChatServer2 {
                         clientMap.put(writer, username);
                     }
 
-                    // Send chat history to the client
                     for (String historyMessage : chatHistory) {
                         writer.println(historyMessage);
                     }
 
                     String message;
                     while ((message = reader.readLine()) != null) {
-                        String formattedMessage = username + ": " + message;
-                        System.out.println("Received: " + formattedMessage);
-                        chatHistory.add(formattedMessage); // Store the message in chat history
-                        broadcast(formattedMessage);
+                        if (message.startsWith("SEND_FILE:")) {
+                            String[] parts = message.split(":", 3);
+                            if (parts.length == 3) {
+                                String sender = username;
+                                String recipient = parts[1];
+                                String fileName = parts[2];
+
+                                broadcastFileTransfer(sender, recipient, fileName);
+                                receiveFile(sender, fileName);
+                            }
+                        } else {
+                            String formattedMessage = username + ": " + message;
+                            System.out.println("Received: " + formattedMessage);
+                            chatHistory.add(formattedMessage);
+                            broadcast(formattedMessage);
+                        }
                     }
                 } else {
                     writer.println("AUTH_FAILED");
@@ -121,8 +131,17 @@ public class ChatServer2 {
             }
         }
 
+        private void broadcastFileTransfer(String sender, String recipient, String fileName) {
+            synchronized (clientMap) {
+                for (PrintWriter writer : clientMap.keySet()) {
+                    if (clientMap.get(writer).equals(recipient)) {
+                        writer.println("RECEIVE_FILE:" + sender + ":" + fileName);
+                    }
+                }
+            }
+        }
+
         private boolean authenticateUser(String username, String password) {
-            // Use the database to authenticate users
             try {
                 String query = "SELECT password FROM users WHERE username = ?";
                 PreparedStatement preparedStatement = dbConnection.prepareStatement(query);
@@ -138,6 +157,34 @@ public class ChatServer2 {
             }
 
             return false;
+        }
+
+        private void receiveFile(String sender, String fileName) {
+            try {
+                InputStream inputStream = socket.getInputStream();
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+                String uniqueFileName = sender + "_" + dateFormat.format(new Date()) + "_" + fileName;
+
+                FileOutputStream fileOutputStream = new FileOutputStream(uniqueFileName);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+
+                while ((bytesRead = objectInputStream.read(buffer)) != -1) {
+                    bufferedOutputStream.write(buffer, 0, bytesRead);
+                }
+
+                bufferedOutputStream.flush();
+                bufferedOutputStream.close();
+
+                writer.println("FILE_RECEIVED:" + sender + ":" + uniqueFileName);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
