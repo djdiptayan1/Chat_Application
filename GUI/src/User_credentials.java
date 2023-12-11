@@ -15,9 +15,9 @@ public class User_credentials {
             Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
 
             // Insert user credentials
-            insertUserCredentials(connection, "Diptayan", "Qwerty");
+            insertUserCredentials(connection, "Diptayan", "12");
             insertUserCredentials(connection, "Palash", "12");
-            insertUserCredentials(connection, "Srijit", "SneaX");
+            insertUserCredentials(connection, "Srijit", "12");
 
             // Close the connection
             connection.close();
